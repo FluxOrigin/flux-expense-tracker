@@ -24,11 +24,16 @@
             </div>
 
             <nav class="nav">
-                <a href="{{ url_for('index') }}" class="nav-link nav-link-active">
+                <a href="{{ url_for('index') }}"
+                   class="nav-link {% if active_page == 'dashboard' %}nav-link-active{% endif %}">
                     <span class="nav-dot"></span>
                     Dashboard
                 </a>
-                <!-- We'll add more links later: /transactions, /categories -->
+                <a href="{{ url_for('expenses') }}"
+                   class="nav-link {% if active_page == 'expenses' %}nav-link-active{% endif %}">
+                    <span class="nav-dot"></span>
+                    Expenses
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -45,13 +50,23 @@
                     </p>
                 </div>
                 <div class="topbar-right">
-                    <button class="pill-button pill-primary">
+                    <a href="{{ url_for('new_expense') }}" class="pill-button pill-primary">
                         + Add Expense
-                    </button>
+                    </a>
                 </div>
             </header>
 
             <section class="content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-container">
+                            {% for category, message in messages %}
+                                <div class="flash flash-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
                 {% block content %}{% endblock %}
             </section>
 
@@ -61,6 +76,8 @@
         </main>
     </div>
 
+    <!-- Scripts: Chart.js first, then our own JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>

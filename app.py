@@ -1,10 +1,20 @@
 from datetime import datetime, date
 from collections import defaultdict
+from calendar import month_name
 
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    jsonify,
+)
 from flask_sqlalchemy import SQLAlchemy
 
-# Global SQLAlchemy object (initialized with the app in create_app)
+
+# Global SQLAlchemy object
 db = SQLAlchemy()
 
 
@@ -37,6 +47,33 @@ class Expense(db.Model):
         return f"<Expense {self.amount} {self.category.name} {self.date}>"
 
 
+def get_month_expenses(year: int, month: int):
+    """
+    Return all expenses for a given year/month, ordered by date ascending.
+    """
+    first = date(year, month, 1)
+    # compute first day of next month
+    if month == 12:
+        next_first = date(year + 1, 1, 1)
+    else:
+        next_first = date(year, month + 1, 1)
+
+    return (
+        Expense.query
+        .filter(Expense.date >= first, Expense.date < next_first)
+        .order_by(Expense.date.asc())
+        .all()
+    )
+
+
+def get_current_month_expenses():
+    """
+    Convenience wrapper for the current month.
+    """
+    today = date.today()
+    return get_month_expenses(today.year, today.month)
+
+
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = "dev-secret-change-later"
@@ -45,21 +82,20 @@ def create_app():
 
     db.init_app(app)
 
+    # -------------------- ROUTES -------------------- #
+
     @app.route("/")
     def index():
         """
-        Dashboard. Shows summary for the current month, based on real DB data.
+        Dashboard. Shows summary for the selected month (default = current).
         """
         today = date.today()
-        month_start = date(today.year, today.month, 1)
 
-        # Get all expenses for the current month
-        monthly_expenses = (
-            Expense.query
-            .filter(Expense.date >= month_start, Expense.date <= today)
-            .order_by(Expense.date.desc())
-            .all()
-        )
+        # Read filters from query string; fall back to current month/year
+        selected_year = request.args.get("year", type=int) or today.year
+        selected_month = request.args.get("month", type=int) or today.month
+
+        monthly_expenses = get_month_expenses(selected_year, selected_month)
 
         total_spent = sum(float(e.amount) for e in monthly_expenses)
         per_category = defaultdict(float)
@@ -74,16 +110,60 @@ def create_app():
             top_category_name = "N/A"
             top_category_amount = 0.0
 
+        month_label = f"{month_name[selected_month]} {selected_year}"
+
         summary = {
-            "month": today.strftime("%B %Y"),
+            "month": month_label,
             "total_spent": total_spent,
             "top_category": top_category_name,
             "top_category_amount": top_category_amount,
             "transactions_count": len(monthly_expenses),
         }
 
-        return render_template("index.html", summary=summary, active_page="dashboard")
-    
+        # Month options: always all 12
+        month_options = [(i, month_name[i]) for i in range(1, 13)]
+
+        # Year options: based on actual data in the database
+        min_date = db.session.query(db.func.min(Expense.date)).scalar()
+        max_date = db.session.query(db.func.max(Expense.date)).scalar()
+
+        if min_date and max_date:
+            year_options = list(range(min_date.year, max_date.year + 1))
+        else:
+            # If no expenses yet, just show the current year
+            year_options = [today.year]
+
+        return render_template(
+            "index.html",
+            summary=summary,
+            active_page="dashboard",
+            month_options=month_options,
+            year_options=year_options,
+            selected_month=selected_month,
+            selected_year=selected_year,
+        )
+
+    @app.route("/api/monthly-category-breakdown")
+    def monthly_category_breakdown():
+        """
+        Return JSON with spending per category for the selected month/year.
+        Defaults to current month/year if not provided.
+        """
+        today = date.today()
+        year_arg = request.args.get("year", type=int) or today.year
+        month_arg = request.args.get("month", type=int) or today.month
+
+        expenses = get_month_expenses(year_arg, month_arg)
+        per_category = defaultdict(float)
+
+        for e in expenses:
+            per_category[e.category.name] += float(e.amount)
+
+        labels = list(per_category.keys())
+        values = [round(per_category[name], 2) for name in labels]
+
+        return jsonify({"labels": labels, "values": values})
+
     @app.route("/expenses", methods=["GET"])
     def expenses():
         """
@@ -137,12 +217,11 @@ def create_app():
             else:
                 category = get_or_create_category("Uncategorized")
 
-            # 🔴 IMPORTANT: we must actually set the category relationship here
             expense = Expense(
                 amount=amount,
                 description=description,
                 date=expense_date,
-                category=category,      # <-- this is what populates category_id
+                category=category,
             )
 
             db.session.add(expense)
@@ -215,7 +294,7 @@ def create_app():
             expense=expense,
             categories=categories,
             active_page="expenses",
-        )    
+        )
 
     @app.route("/expenses/<int:expense_id>/delete", methods=["POST"])
     def delete_expense(expense_id: int):
@@ -258,21 +337,6 @@ def seed_example_data():
     for c in categories:
         db.session.add(c)
     db.session.commit()
-    
-def get_or_create_category(name: str) -> Category:
-    """
-    Fetch a category by name, creating it if it does not exist.
-    """
-    name = (name or "").strip()
-    if not name:
-        name = "Uncategorized"
-
-    category = Category.query.filter_by(name=name).first()
-    if category is None:
-        category = Category(name=name)
-        db.session.add(category)
-        db.session.commit()
-    return category
 
     # Helper to fetch category by name quickly
     def get_cat(name):
@@ -316,6 +380,22 @@ def get_or_create_category(name: str) -> Category:
         db.session.add(e)
 
     db.session.commit()
+
+
+def get_or_create_category(name: str) -> Category:
+    """
+    Fetch a category by name, creating it if it does not exist.
+    """
+    name = (name or "").strip()
+    if not name:
+        name = "Uncategorized"
+
+    category = Category.query.filter_by(name=name).first()
+    if category is None:
+        category = Category(name=name)
+        db.session.add(category)
+        db.session.commit()
+    return category
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@
                             <form method="post"
                                 action="{{ url_for('delete_expense', expense_id=e.id) }}"
                                 style="display:inline;"
-                                onsubmit="return confirm('Delete this expense?');">
+                                onsubmit="return confirm('Remove this expense from your history? This action cannot be undone.');">
                                 <button type="submit" class="pill-button pill-danger pill-small">Delete</button>
                             </form>
                         </td>

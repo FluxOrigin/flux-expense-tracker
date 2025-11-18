@@ -4,11 +4,45 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
+
+<div class="filter-bar">
+    <form method="get" class="filter-form">
+        <div class="form-field">
+            <label for="month">Month</label>
+            <select id="month" name="month" class="input">
+                {% for value, label in month_options %}
+                <option value="{{ value }}"
+                        {% if value == selected_month %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-field">
+            <label for="year">Year</label>
+            <select id="year" name="year" class="input">
+                {% for year in year_options %}
+                <option value="{{ year }}"
+                        {% if year == selected_year %}selected{% endif %}>
+                    {{ year }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-field filter-submit">
+            <label>&nbsp;</label>
+            <button type="submit" class="pill-button pill-secondary">Update view</button>
+        </div>
+    </form>
+</div>
+
 <div class="grid">
     <div class="card card-highlight">
-        <div class="card-label">Current Month</div>
+        <div class="card-label">Selected Month</div>
         <div class="card-value">{{ summary.month }}</div>
-        <div class="card-caption">Quick snapshot of your spending trajectory.</div>
+        <div class="card-caption">Snapshot of your spending for this period.</div>
     </div>
 
     <div class="card">
@@ -28,17 +62,23 @@
     <div class="card">
         <div class="card-label">Transactions</div>
         <div class="card-value">{{ summary.transactions_count }}</div>
-        <div class="card-caption">Logged so far this month.</div>
+        <div class="card-caption">Logged in this period.</div>
     </div>
 </div>
 
 <div class="card card-wide mt-lg">
     <div class="card-header">
         <h2 class="card-title">Spending pulse</h2>
-        <p class="card-subtitle">Charts coming soon — this is where your trendline will live.</p>
+        <p class="card-subtitle">
+            Current-month spending split by category.
+        </p>
     </div>
-    <div class="placeholder-chart">
-        <span>Chart area (next iteration)</span>
+    <div class="chart-container">
+        <canvas id="monthlyCategoryChart"
+                data-url="{{ url_for('monthly_category_breakdown') }}"
+                data-year="{{ selected_year }}"
+                data-month="{{ selected_month }}"></canvas>
     </div>
 </div>
+
 {% endblock %}

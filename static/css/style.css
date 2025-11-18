@@ -211,6 +211,21 @@ body {
 
 /* Cards */
 
+.chart-container {
+    border-radius: 14px;
+    border: 1px dashed rgba(148, 163, 184, 0.45);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 320px; /* ensure there's space for the chart */
+}
+
+.chart-container canvas {
+    max-width: 420px;
+    max-height: 420px;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -356,6 +371,25 @@ body {
     background: var(--accent-soft);
     color: var(--accent);
     border-color: rgba(34, 211, 238, 0.5);
+}
+
+.filter-bar {
+    margin-bottom: 14px;
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.filter-form .form-field {
+    min-width: 140px;
+}
+
+.filter-submit {
+    align-self: flex-end;
 }
 
 .form {
