@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}Flux Expense Tracker{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-mark">Fₓ</div>
+                <div class="logo-text">
+                    <span class="logo-title">Flux Expense</span>
+                    <span class="logo-subtitle">Personal Finance Radar</span>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <a href="{{ url_for('index') }}" class="nav-link nav-link-active">
+                    <span class="nav-dot"></span>
+                    Dashboard
+                </a>
+                <!-- We'll add more links later: /transactions, /categories -->
+            </nav>
+
+            <div class="sidebar-footer">
+                <span class="sidebar-tagline">Track. Adjust. Level Up.</span>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p class="page-subtitle">
+                        A simple, opinionated view of where your money is actually going.
+                    </p>
+                </div>
+                <div class="topbar-right">
+                    <button class="pill-button pill-primary">
+                        + Add Expense
+                    </button>
+                </div>
+            </header>
+
+            <section class="content">
+                {% block content %}{% endblock %}
+            </section>
+
+            <footer class="footer">
+                <span>Built by {{ "FluxOrigin" }} · Personal Expense Tracker</span>
+            </footer>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

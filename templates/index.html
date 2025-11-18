@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard · Flux Expense Tracker{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid">
+    <div class="card card-highlight">
+        <div class="card-label">Current Month</div>
+        <div class="card-value">{{ summary.month }}</div>
+        <div class="card-caption">Quick snapshot of your spending trajectory.</div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Total Spent</div>
+        <div class="card-value">$ {{ "%.2f"|format(summary.total_spent) }}</div>
+        <div class="card-caption">All recorded expenses this month.</div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Top Category</div>
+        <div class="card-value">{{ summary.top_category }}</div>
+        <div class="card-caption">
+            $ {{ "%.2f"|format(summary.top_category_amount) }} and counting.
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-label">Transactions</div>
+        <div class="card-value">{{ summary.transactions_count }}</div>
+        <div class="card-caption">Logged so far this month.</div>
+    </div>
+</div>
+
+<div class="card card-wide mt-lg">
+    <div class="card-header">
+        <h2 class="card-title">Spending pulse</h2>
+        <p class="card-subtitle">Charts coming soon — this is where your trendline will live.</p>
+    </div>
+    <div class="placeholder-chart">
+        <span>Chart area (next iteration)</span>
+    </div>
+</div>
+{% endblock %}
