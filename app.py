@@ -1,3 +1,15 @@
+"""
+Flux Expense Tracker
+
+A small, portfolio-focused Flask application for tracking personal expenses
+with a modern UI and a Chart.js-powered dashboard.
+
+Author: FluxOrigin
+"""
+
+__version__ = "1.0.0"
+
+
 from datetime import datetime, date
 from collections import defaultdict
 from calendar import month_name
@@ -17,7 +29,8 @@ from flask_sqlalchemy import SQLAlchemy
 # Global SQLAlchemy object
 db = SQLAlchemy()
 
-
+    # -------------------- MODELS -------------------- #
+    
 class Category(db.Model):
     __tablename__ = "categories"
 
@@ -46,6 +59,7 @@ class Expense(db.Model):
     def __repr__(self) -> str:
         return f"<Expense {self.amount} {self.category.name} {self.date}>"
 
+    # -------------------- QUERY HELPERS -------------------- #
 
 def get_month_expenses(year: int, month: int):
     """
@@ -73,6 +87,7 @@ def get_current_month_expenses():
     today = date.today()
     return get_month_expenses(today.year, today.month)
 
+    # -------------------- APPLICATION FACTORY -------------------- #
 
 def create_app():
     app = Flask(__name__)

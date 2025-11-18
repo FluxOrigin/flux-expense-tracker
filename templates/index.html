@@ -42,13 +42,13 @@
     <div class="card card-highlight">
         <div class="card-label">Selected Month</div>
         <div class="card-value">{{ summary.month }}</div>
-        <div class="card-caption">Snapshot of your spending for this period.</div>
+        <div class="card-caption">High-level snapshot for this period.</div>
     </div>
 
     <div class="card">
         <div class="card-label">Total Spent</div>
         <div class="card-value">$ {{ "%.2f"|format(summary.total_spent) }}</div>
-        <div class="card-caption">All recorded expenses this month.</div>
+        <div class="card-caption">All recorded expenses in the selected month.</div>
     </div>
 
     <div class="card">
@@ -62,7 +62,7 @@
     <div class="card">
         <div class="card-label">Transactions</div>
         <div class="card-value">{{ summary.transactions_count }}</div>
-        <div class="card-caption">Logged in this period.</div>
+        <div class="card-caption">Number of expenses you’ve logged.</div>
     </div>
 </div>
 
@@ -70,7 +70,7 @@
     <div class="card-header">
         <h2 class="card-title">Spending pulse</h2>
         <p class="card-subtitle">
-            Current-month spending split by category.
+            Category breakdown for the selected month and year.
         </p>
     </div>
     <div class="chart-container">
