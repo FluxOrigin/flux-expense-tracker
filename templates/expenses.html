@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Expenses · Flux Expense Tracker{% endblock %}
+{% block page_title %}Expenses{% endblock %}
+
+{% block content %}
+<div class="card card-wide">
+    <div class="card-header">
+        <h2 class="card-title">All expenses</h2>
+        <p class="card-subtitle">
+            {{ expenses|length }} entr{{ 'y' if expenses|length == 1 else 'ies' }} recorded.
+        </p>
+    </div>
+
+    {% if expenses %}
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th style="text-align: right;">Amount</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for e in expenses %}
+                    <tr>
+                        <td>{{ e.date.strftime("%Y-%m-%d") }}</td>
+                        <td><span class="badge badge-pill">{{ e.category.name }}</span></td>
+                        <td>{{ e.description or '-' }}</td>
+                        <td style="text-align: right;">$ {{ "%.2f"|format(e.amount) }}</td>
+                        <td style="text-align: right;">
+                            <a href="{{ url_for('edit_expense', expense_id=e.id) }}"
+                            class="pill-button pill-secondary pill-small">Edit</a>
+                            <form method="post"
+                                action="{{ url_for('delete_expense', expense_id=e.id) }}"
+                                style="display:inline;"
+                                onsubmit="return confirm('Delete this expense?');">
+                                <button type="submit" class="pill-button pill-danger pill-small">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="card-caption">
+            No expenses recorded yet. Use the “Add Expense” button to create your first entry.
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

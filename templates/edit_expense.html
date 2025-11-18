@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Expense · Flux Expense Tracker{% endblock %}
+{% block page_title %}Edit expense{% endblock %}
+
+{% block content %}
+<div class="card card-wide">
+    <div class="card-header">
+        <h2 class="card-title">Update this expense</h2>
+        <p class="card-subtitle">Adjust the amount, date, or category.</p>
+    </div>
+
+    <form method="post" class="form">
+        <div class="form-row">
+            <div class="form-field">
+                <label for="amount">Amount</label>
+                <input class="input" type="number" step="0.01" min="0" id="amount" name="amount"
+                       required value="{{ "%.2f"|format(expense.amount) }}">
+            </div>
+            <div class="form-field">
+                <label for="date">Date</label>
+                <input class="input" type="date" id="date" name="date" required
+                       value="{{ expense.date.strftime('%Y-%m-%d') }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label for="category">Category</label>
+                <select id="category" name="category" class="input">
+                    <option value="">-- choose existing --</option>
+                    {% for c in categories %}
+                    <option value="{{ c.name }}"
+                            {% if c.id == expense.category_id %}selected{% endif %}>
+                        {{ c.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="new_category">Or new category</label>
+                <input class="input" type="text" id="new_category" name="new_category"
+                       placeholder="e.g. Books, Travel">
+            </div>
+        </div>
+
+        <div class="form-field">
+            <label for="description">Description</label>
+            <textarea class="input" id="description" name="description" rows="2"
+                      placeholder="Optional notes">{{ expense.description or "" }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('expenses') }}" class="pill-button pill-secondary">Cancel</a>
+            <button type="submit" class="pill-button pill-primary">Save changes</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from collections import defaultdict
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 
 # Global SQLAlchemy object (initialized with the app in create_app)
@@ -82,7 +82,151 @@ def create_app():
             "transactions_count": len(monthly_expenses),
         }
 
-        return render_template("index.html", summary=summary)
+        return render_template("index.html", summary=summary, active_page="dashboard")
+    
+    @app.route("/expenses", methods=["GET"])
+    def expenses():
+        """
+        List all recorded expenses, newest first.
+        """
+        all_expenses = (
+            Expense.query
+            .order_by(Expense.date.desc(), Expense.created_at.desc())
+            .all()
+        )
+        return render_template(
+            "expenses.html",
+            expenses=all_expenses,
+            active_page="expenses",
+        )
+
+    @app.route("/expenses/new", methods=["GET", "POST"])
+    def new_expense():
+        """
+        Create a new expense via a simple HTML form.
+        """
+        if request.method == "POST":
+            amount_raw = request.form.get("amount", "").strip()
+            date_raw = request.form.get("date", "").strip()
+            category_name = request.form.get("category", "").strip()
+            new_category_name = request.form.get("new_category", "").strip()
+            description = request.form.get("description", "").strip()
+
+            # Basic validation
+            if not amount_raw or not date_raw:
+                flash("Amount and date are required.", "error")
+                return redirect(url_for("new_expense"))
+
+            try:
+                amount = float(amount_raw)
+            except ValueError:
+                flash("Amount must be a valid number.", "error")
+                return redirect(url_for("new_expense"))
+
+            try:
+                expense_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+            except ValueError:
+                flash("Invalid date format.", "error")
+                return redirect(url_for("new_expense"))
+
+            # Decide which category to use
+            if new_category_name:
+                category = get_or_create_category(new_category_name)
+            elif category_name:
+                category = get_or_create_category(category_name)
+            else:
+                category = get_or_create_category("Uncategorized")
+
+            # 🔴 IMPORTANT: we must actually set the category relationship here
+            expense = Expense(
+                amount=amount,
+                description=description,
+                date=expense_date,
+                category=category,      # <-- this is what populates category_id
+            )
+
+            db.session.add(expense)
+            db.session.commit()
+
+            flash("Expense added.", "success")
+            return redirect(url_for("expenses"))
+
+        # GET request → show the form with existing categories
+        categories = Category.query.order_by(Category.name).all()
+        return render_template(
+            "new_expense.html",
+            categories=categories,
+            active_page="expenses",
+        )
+
+    @app.route("/expenses/<int:expense_id>/edit", methods=["GET", "POST"])
+    def edit_expense(expense_id: int):
+        """
+        Edit an existing expense.
+        """
+        expense = Expense.query.get_or_404(expense_id)
+
+        if request.method == "POST":
+            amount_raw = request.form.get("amount", "").strip()
+            date_raw = request.form.get("date", "").strip()
+            category_name = request.form.get("category", "").strip()
+            new_category_name = request.form.get("new_category", "").strip()
+            description = request.form.get("description", "").strip()
+
+            if not amount_raw or not date_raw:
+                flash("Amount and date are required.", "error")
+                return redirect(url_for("edit_expense", expense_id=expense.id))
+
+            try:
+                amount = float(amount_raw)
+            except ValueError:
+                flash("Amount must be a valid number.", "error")
+                return redirect(url_for("edit_expense", expense_id=expense.id))
+
+            try:
+                expense_date = datetime.strptime(date_raw, "%Y-%m-%d").date()
+            except ValueError:
+                flash("Invalid date format.", "error")
+                return redirect(url_for("edit_expense", expense_id=expense.id))
+
+            # Decide which category to use
+            if new_category_name:
+                category = get_or_create_category(new_category_name)
+            elif category_name:
+                category = get_or_create_category(category_name)
+            else:
+                category = get_or_create_category("Uncategorized")
+
+            # Apply updates
+            expense.amount = amount
+            expense.date = expense_date
+            expense.description = description
+            expense.category = category
+
+            db.session.commit()
+
+            flash("Expense updated.", "success")
+            return redirect(url_for("expenses"))
+
+        # GET → show form pre-filled
+        categories = Category.query.order_by(Category.name).all()
+        return render_template(
+            "edit_expense.html",
+            expense=expense,
+            categories=categories,
+            active_page="expenses",
+        )    
+
+    @app.route("/expenses/<int:expense_id>/delete", methods=["POST"])
+    def delete_expense(expense_id: int):
+        """
+        Delete an existing expense.
+        """
+        expense = Expense.query.get_or_404(expense_id)
+        db.session.delete(expense)
+        db.session.commit()
+        flash("Expense deleted.", "success")
+        return redirect(url_for("expenses"))
 
     @app.route("/init-db")
     def init_db_route():
@@ -114,6 +258,21 @@ def seed_example_data():
     for c in categories:
         db.session.add(c)
     db.session.commit()
+    
+def get_or_create_category(name: str) -> Category:
+    """
+    Fetch a category by name, creating it if it does not exist.
+    """
+    name = (name or "").strip()
+    if not name:
+        name = "Uncategorized"
+
+    category = Category.query.filter_by(name=name).first()
+    if category is None:
+        category = Category(name=name)
+        db.session.add(category)
+        db.session.commit()
+    return category
 
     # Helper to fetch category by name quickly
     def get_cat(name):
